@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👩‍🏫 荣誉时刻 - 沉浸式奖状生成器</title>
+    <style>
+        :root {
+            --primary-color: #d32f2f; /* 奖状红 */
+            --accent-color: #fbc02d; /* 金色 */
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+        }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            width: 90%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        /* 左侧控制面板 */
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            padding: 40px;
+            background: linear-gradient(135deg, #fff 0%, #fff9f9 100%);
+            border-right: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .controls h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #666;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+        }
+
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+
+        .btn-download {
+            background: var(--primary-color);
+            color: white;
+            margin-top: auto;
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+        }
+
+        .btn-download:hover {
+            background: #b71c1c;
+            transform: translateY(-2px);
+        }
+
+        .file-upload {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* 右侧预览区域 */
+        .preview {
+            flex: 1.5;
+            min-width: 350px;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23444" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 4px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                margin: 20px 0;
+            }
+            .preview {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <h2>🏆 奖状生成助手</h2>
+        
+        <div class="form-group">
+            <label>1. 确认奖状底图</label>
+            <input type="file" id="bgInput" accept="image/*">
+            <span class="file-upload">如果预览区为空，请先点击这里上传你提供的"奖状.jpg"</span>
+        </div>
+
+        <div class="form-group">
+            <label>2. 获奖学生姓名</label>
+            <input type="text" id="studentName" placeholder="例如：张三" value="张三">
+        </div>
+
+        <div class="form-group">
+            <label>3. 奖项内容 / 评语</label>
+            <textarea id="awardContent" rows="3" placeholder="例如：在本次期末考试中，数学成绩优异，荣获“数学小标兵”称号。">在本次期末考试中，成绩优异，表现突出，特发此状，以资鼓励。</textarea>
+            <select id="quickSelect" onchange="fillContent(this.value)" style="margin-top:5px; font-size: 14px; color: #555;">
+                <option value="">✨ 快速选择常用语...</option>
+                <option value="荣获“数学优胜奖”，希望再接再厉！">数学优胜奖</option>
+                <option value="荣获“语文进步之星”，付出终有回报！">语文进步奖</option>
+                <option value="荣获“英语单词小达人”称号！">英语单词达人</option>
+                <option value="乐于助人，品德优良，荣获“美德少年”称号。">美德少年</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="flex-direction: row; gap: 20px;">
+            <div style="flex:1">
+                <label>4. 颁发机构/老师</label>
+                <input type="text" id="issuer" value="班主任：王老师">
+            </div>
+            <div style="flex:1">
+                <label>5. 日期</label>
+                <input type="date" id="dateInput">
+            </div>
+        </div>
+
+        <button class="btn btn-download" onclick="downloadImage()">⬇️ 确认并下载奖状</button>
+    </div>
+
+    <div class="preview">
+        <canvas id="awardCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('awardCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 输入元素
+    const nameInput = document.getElementById('studentName');
+    const contentInput = document.getElementById('awardContent');
+    const issuerInput = document.getElementById('issuer');
+    const dateInput = document.getElementById('dateInput');
+    const bgInput = document.getElementById('bgInput');
+
+    // 初始化日期为今天
+    dateInput.valueAsDate = new Date();
+
+    // 图片对象
+    let bgImage = new Image();
+    
+    // 默认加载逻辑 (如果图片在同目录下，可以修改这里)
+    // 如果没有本地图片，页面加载时会显示为空，需要用户上传
+    bgImage.src = ''; 
+    
+    bgImage.onload = () => {
+        drawAward();
+    };
+
+    // 监听所有输入框的变化，实现实时预览
+    [nameInput, contentInput, issuerInput, dateInput].forEach(input => {
+        input.addEventListener('input', drawAward);
+    });
+
+    // 监听背景图上传
+    bgInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                bgImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 快速填词功能
+    window.fillContent = function(val) {
+        if(val) {
+            contentInput.value = val;
+            drawAward();
+        }
+    }
+
+    // 核心绘制函数
+    function drawAward() {
+        if (!bgImage.src) return;
+
+        // 1. 设置画布大小为图片原始大小
+        canvas.width = bgImage.naturalWidth;
+        canvas.height = bgImage.naturalHeight;
+
+        // 2. 绘制背景图
+        ctx.drawImage(bgImage, 0, 0);
+
+        // 3. 配置通用字体样式 (黑体, 加粗)
+        // 注意：字体大小是根据图片分辨率估算的，如果图片很大，文字会变小，按比例调整
+        const baseSize = canvas.width * 0.04; // 基准字号
+        ctx.fillStyle = '#000000'; // 纯黑
+        ctx.textBaseline = 'middle';
+
+        // --- 绘制名字 (恭喜 xxx 同学) ---
+        ctx.font = `bold ${baseSize * 1.5}px "SimHei", "STHeiti", sans-serif`;
+        ctx.textAlign = 'center';
+        // 名字位置：水平居中，垂直方向大概在图片的 35% 处
+        const nameY = canvas.height * 0.38; 
+        ctx.fillText(`恭喜 ${nameInput.value} 同学`, canvas.width / 2, nameY);
+
+        // --- 绘制奖状内容 ---
+        ctx.font = `bold ${baseSize}px "SimHei", "STHeiti", sans-serif`;
+        ctx.textAlign = 'left'; 
+        
+        // 自动换行逻辑
+        const contentText = contentInput.value;
+        const startX = canvas.width * 0.18; // 左边距 18%
+        const startY = canvas.height * 0.52; // 起始高度 52%
+        const maxWidth = canvas.width * 0.64; // 文本最大宽度
+        const lineHeight = baseSize * 1.6;
+
+        wrapText(ctx, contentText, startX, startY, maxWidth, lineHeight);
+
+        // --- 绘制落款和日期 ---
+        ctx.font = `bold ${baseSize * 0.8}px "SimHei", "STHeiti", sans-serif`;
+        ctx.textAlign = 'right';
+        const footerX = canvas.width * 0.85; // 右边距
+        const footerY = canvas.height * 0.80; // 底部高度
+
+        // 落款
+        ctx.fillText(issuerInput.value, footerX, footerY);
+        
+        // 日期
+        const dateObj = new Date(dateInput.value);
+        const dateStr = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+        ctx.fillText(dateStr, footerX, footerY + lineHeight);
+    }
+
+    // 自动换行辅助函数
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+        let words = text.split('');
+        let line = '';
+
+        for(let n = 0; n < words.length; n++) {
+            let testLine = line + words[n];
+            let metrics = context.measureText(testLine);
+            let testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+                context.fillText(line, x, y);
+                line = words[n];
+                y += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        context.fillText(line, x, y);
+    }
+
+    // 下载功能
+    window.downloadImage = function() {
+        if (!bgImage.src) {
+            alert('请先上传奖状背景图！');
+            return;
+        }
+        const link = document.createElement('a');
+        link.download = `${nameInput.value}_奖状.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+</script>
+
+</body>
+</html>
